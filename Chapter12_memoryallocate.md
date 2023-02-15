@@ -336,4 +336,5 @@ bool newcustomer(double x)
   return (std::rand()*x/RAND_MAX<1);
 }
 ```
-原理是RAND_MAX是rand()函数可能返回的最大值（0是最小值），假设客户到达的平均间隔x是6，则rand()*x/RAND_MAX<1的值将位于0~6之间，即平均每隔6次，这个值会有一次小于1。(存疑，验证出错)
+原理是RAND_MAX是rand()函数可能返回的最大值（0是最小值），假设客户到达的平均间隔x是6，则rand()*x/RAND_MAX<1的值将位于0~6之间，即平均每隔6次，这个值会有一次小于1。
+(验证出错,bank.cpp源代码有问题，已验证queue队列类正确，问题应出在customer类等)
