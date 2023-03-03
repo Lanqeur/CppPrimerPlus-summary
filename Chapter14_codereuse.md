@@ -264,7 +264,7 @@ int twodee[10][5];
 #### 使用多个类型参数
 模板可以包含多个类型参数，假设希望类可以保存两种类型的值，则可以创建并使用Pair模板来保存，标准模板库提供了类似的模板，名为pair。
 ```C++
-template <class T1,class T2>
+template <typename T1,typename T2>
 class Pair
 {
     private:
@@ -277,7 +277,7 @@ class Pair
 #### 默认类型模板
 类模板的另一项特性是，可以为类型参数提供默认值：
 ```C++
-template <class T1,class T2=int>class Topo{...};
+template <typename T1,typename T2=int>class Topo{...};
 ```
 这样，如果省略T2的值，编译器将使用int。
 标准模板库经常使用该特性，将默认类型设置为类。
@@ -301,9 +301,9 @@ template <> class Classname<specialized-type-name>{...};
 C++还允许部分具体化(partial specialization)，即部分限制模板的通用性。例如，部分具体化可以给参数类型之一指定具体的类型：
 ```C++
 //general template
-template <class T1,class T2> class Pair{...};
+template <typename T1,typename T2> class Pair{...};
 //specialization with T2 set to int
-template <class T1> class Pair<T1,int>{...};
+template <typename T1> class Pair<T1,int>{...};
 ```
 关键字template后面的<>声明是没有被具体化的类型参数，因此上述第二个声明将T2具体化为int，但是T1保持不变。**如果指定所有类型，则<>内将为空，这将导致显式具体化。**
 如果有多个模板可供选择，编译器将使用具体化程度最高的模板。
