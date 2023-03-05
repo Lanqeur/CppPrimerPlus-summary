@@ -386,7 +386,7 @@ int main()
 }
 ```
 开头的代码中，template <typename T> class Thing是模板参数，template <typename T> class是类型，Thing是参数。
-在主函数内声明Crab<Stack> nebula;后，```Thing<int>```将被实例化为```Stack<int>```，而```Thing<double>```将被实例化为```Stack<double>```。总之，模板参数Thing将被替换为声明Crab对象时被用作模板参数的模板类型。
+在主函数内声明```Crab<Stack> nebula;```后，```Thing<int>```将被实例化为```Stack<int>```，而```Thing<double>```将被实例化为```Stack<double>```。总之，模板参数Thing将被替换为声明Crab对象时被用作模板参数的模板类型。
 可以混合使用模板参数和常规参数，例如：
 ```C++
 template<template <typename T> class Thing,typename U,typename V>
@@ -401,3 +401,130 @@ class Crab
 现在成员s1和s2可存储的数据类型为泛型。
 模板参数T表示一种模板类型，而类型参数U和V表示非模板类型。
 ### 模板类和友元
+模板类声明也可以有友元，模板的友元分为3类：
+* 非模板友元；
+* 约束(bound)模板友元，即友元的类型取决于类被实例化时的类型；
+* 非约束(unbound)模板友元，即友元的所有具体化都是类的每一个具体化的友元。
+#### 模板类的非模板友元函数
+在模板类中将一个常规函数声明为友元：
+```C++
+template <typename T>
+class HasFriend
+{
+    public:
+    friend void counts();//friend to all HasFriend instantiations
+    ...
+};
+```
+上述声明使counts()成为所有实例化的友元，例如它将是类```HasFriend<int>```和```HasFriend<string>```的友元。
+counts()函数不是通过对象调用的，它是友元不是成员函数。由于counts()函数没有对象参数，它只能访问全局对象，使用全局指针访问非全局对象，创建自己的对象，访问模板类的静态数据成员。
+
+如果要为友元函数提供模板类参数，必须要为使用的友元定义显式具体化，因为友元函数本身不是模板函数，而只是使用一个模板作为参数：
+```C++
+template <typename T>
+class HasFriend
+{
+    private:
+    T item;
+    static int ct;
+    public:
+    friend void counts();
+    friend void reports(HasFriend<T> &);//template parameter
+};
+//each specialization has its own static data member
+template <typename T>
+int HasFriend<T>::ct=0;
+//non-template friend to all HasFriend<T> classes
+void counts()
+{
+    cout<<HasFriend<int>::ct<<";";
+    cout<<HasFriend<double>::ct<<endl;
+}
+//non-template friend to the HasFriend<int> class
+void reports(HasFriend<int> & hf)
+{
+    cout<<hf.item<<endl;
+}
+//non-template friend to the HasFriend<double> class
+void reports(HasFriend<double> & hf)
+{
+    cout<<hf.item<<endl;
+}
+```
+上述程序中，count()方法是所有HasFriend具体化的友元，它报告两个特定的具体化的ct值。该程序还提供了两个report()函数，它们分别是某个特定HasFriend具体化的友元。HAsFriend模板有一个静态成员ct，这意味着这个类的每一个特定的具体化都将有自己的静态成员。
+#### 模板类的约束模板友元函数
+要使友元函数本身成为模板，即使类的每一个具体化都获得一个与友元匹配的具体化，包含以下3步：
+1. 首先，在类定义前面声明每个模板函数。
+```C++
+template <typename T> void counts();
+template <typename T> void reports(T &);
+```
+2. 然后，在类中再次将模板声明为友元：
+```C++
+template <typename TT>
+class HasFriendT
+{
+    ...
+    friend void counts<TT>();
+    friend void reports<TT>(HasFriend<TT> &);
+};
+```
+声明中的<>指出这是模板具体化。
+3. 为友元提供模板定义。
+```C++
+//template friend functions definitions
+template <typename T>
+void counts()
+{
+    cout<<HasFriendT<T>::ct<<endl;
+}
+template <typename T>
+void reports(T & ht)
+{
+    cout<<hf.item<<endl;
+}
+```
+#### 模板类的非约束模板友元函数
+约束模板友元函数是在类外声明的模板的具体化。通过在类内部声明模板，可以创建非约束友元函数，即每个函数具体化都是每个类的具体化的友元。
+对于非约束友元，友元模板类型参数与模板类类型参数是不同的：
+```C++
+template <typename T>
+class ManyFriend
+{
+    ...
+    template <typename C,typename D> friend void show2(C &,D &);
+};
+template <typename C,typename D> void show2(C & c,D & d)
+{
+    cout<<c.item<<","<<d.item<<endl;
+}
+```
+使用非约束友元时，具体化之后的友元是所有这种ManyFriend具体化的友元，所以能够访问所有具体化对象的item成员。
+### 模板别名(C++11)
+可以使用typedef为模板具体化指定别名：
+```C++
+//define three typedef aliases
+typedef std::array<double,12> arrd;
+typedef std::array<int,12> arri;
+typedef std::array<std::string,12> arrst;
+arrd gallons;
+arri days;
+arrst months;
+```
+C++11新增了一项功能，使用模板提供一系列别名：
+```C++
+template <typename T>
+using arrtype=std::array<T,12>;//template to create multiple alises
+```
+这将arrtype定义为一个模板别名，可以使用它来指定类型：
+```C++
+arrtype<double> gallons;
+arrtype<int> days;
+arrtype<std::string> months;
+```
+C++11允许将语法using=用于非模板，与常规typedef等价：
+```C++
+typedef const char * pc1;//typedef syntax
+using pc2=const char *;//using= syntax
+```
+C++11还新增了可变参数模板(variadic template)，可以用于定义接受可变数量的参数的模板类和模板函数。
